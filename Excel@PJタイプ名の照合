@@ -1,0 +1,18 @@
+# DynamoのINデータを取得
+input_type_names = IN[0]  # Input1: 取得済みのタイプ名リスト
+list_data = IN[1]  # 数字+List構造のデータ
+
+# 結果を格納するリスト
+included_lists = []  # Input1に含まれているタイプ名を持つリスト
+excluded_lists = []  # Input1に含まれていないタイプ名を持つリスト
+
+# データ構造を走査
+for numbered_list in list_data:
+    type_name = numbered_list[1]  # 各リストの1番目の値がタイプ名
+    if type_name in input_type_names:
+        included_lists.append(numbered_list)  # 含まれているリストに追加
+    else:
+        excluded_lists.append(numbered_list)  # 含まれていないリストに追加
+
+# 結果をOUTに出力
+OUT = (included_lists, excluded_lists)
