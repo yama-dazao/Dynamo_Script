@@ -1,0 +1,1282 @@
+{
+  "Uuid": "8f3394eb-6dbc-460b-bd5e-22ea4a42e4d3",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "01_Tyoe_複製",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\nclr.AddReference(\"System.Windows.Forms\")\r\nfrom System.Windows.Forms import OpenFileDialog\r\n\r\nimport openpyxl  # 必要に応じてインストールしてください\r\n\r\n# 1. ファイル選択ダイアログを開く\r\ndef open_file_dialog():\r\n    dialog = OpenFileDialog()\r\n    dialog.Filter = \"Excel Files (*.xlsx)|*.xlsx\"\r\n    dialog.Multiselect = False  # 単一ファイルのみ選択可能\r\n    if dialog.ShowDialog() == True:\r\n        return dialog.FileName\r\n    return None\r\n\r\n# 2. Excelファイルを開いてシート一覧を取得\r\ndef get_excel_sheets(file_path):\r\n    try:\r\n        workbook = openpyxl.load_workbook(file_path, read_only=True)\r\n        return workbook.sheetnames\r\n    except Exception as e:\r\n        return [\"Error: \" + str(e)]\r\n\r\n# 3. Dynamoの出力\r\nexcel_file = open_file_dialog()  # ユーザーにファイルを選択させる\r\nsheet_list = []\r\n\r\nif excel_file:\r\n    sheet_list = get_excel_sheets(excel_file)\r\n\r\nOUT = excel_file, sheet_list\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "2ea4df456d594d43919744c47c5d84d3",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "f328f07765a047d58330ff8d82f0efd0",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "dc2c7359bda544f991e36f69506713a7",
+          "Name": "OUT",
+          "Description": "Python スクリプトの結果",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "埋め込み Python スクリプトを実行します。"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\nclr.AddReference(\"System.Windows.Forms\")\r\nfrom System.Windows.Forms import Form, ComboBox, Button, DialogResult, Label\r\n\r\nimport openpyxl  # 必要に応じてインストールしてください\r\n\r\n# 1. シート選択画面を作成\r\ndef show_sheet_selector(sheet_names):\r\n    form = Form()\r\n    form.Text = \"シート選択\"\r\n    form.Width = 300\r\n    form.Height = 150\r\n\r\n    label = Label()\r\n    label.Text = \"シート名を選択してください：\"\r\n    label.Top = 10\r\n    label.Left = 10\r\n    label.Width = 260\r\n    form.Controls.Add(label)\r\n\r\n    combo = ComboBox()\r\n    combo.Top = 40\r\n    combo.Left = 10\r\n    combo.Width = 260\r\n    combo.DataSource = sheet_names\r\n    form.Controls.Add(combo)\r\n\r\n    ok_button = Button()\r\n    ok_button.Text = \"OK\"\r\n    ok_button.Top = 80\r\n    ok_button.Left = 100\r\n    ok_button.Width = 80\r\n\r\n    def on_ok_click(sender, event):\r\n        form.Tag = combo.SelectedItem  # 選択されたシート名を保存\r\n        form.DialogResult = DialogResult.OK\r\n        form.Close()\r\n\r\n    ok_button.Click += on_ok_click\r\n    form.Controls.Add(ok_button)\r\n\r\n    if form.ShowDialog() == DialogResult.OK:\r\n        return form.Tag  # 選択されたシート名を返す\r\n    return None\r\n\r\n# 2. 選択したシートの行・列情報を取得\r\ndef get_sheet_data(file_path, sheet_name):\r\n    try:\r\n        workbook = openpyxl.load_workbook(file_path, data_only=True)\r\n        sheet = workbook[sheet_name]\r\n        data = []\r\n        for row in sheet.iter_rows(values_only=True):\r\n            data.append(row)\r\n        return data\r\n    except Exception as e:\r\n        return [\"Error: \" + str(e)]\r\n\r\n# Dynamoからの入力 (OUTで受け取る想定)\r\nexcel_file = IN[0]  # Excelファイルのパス\r\nsheet_list = IN[1]  # シート名のリスト\r\n\r\nselected_sheet = None\r\nsheet_data = []\r\n\r\nif excel_file and sheet_list:\r\n    # ユーザーがシートを選択\r\n    selected_sheet = show_sheet_selector(sheet_list)\r\n    if selected_sheet:\r\n        # 選択されたシートのデータを取得\r\n        sheet_data = get_sheet_data(excel_file, selected_sheet)\r\n\r\n# Dynamoへの出力\r\nOUT = selected_sheet, sheet_data\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "a45389336d394284b1235cf6967266fc",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "5d4e228fe304472c8e59579ac19f950a",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "6e2a8f15572b451db01d6be68c216bee",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "6b2948de1e244ced9c13cdc048d7522e",
+          "Name": "OUT",
+          "Description": "Python スクリプトの結果",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "埋め込み Python スクリプトを実行します。"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "Id": "27b738b0ad7f4ba2acfd88fe070d170b",
+      "NodeType": "CodeBlockNode",
+      "Inputs": [
+        {
+          "Id": "02a9c0ba8ce444f5ba502aa8bac47f78",
+          "Name": "x",
+          "Description": "x",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "4b04be2d6ceb4eee8597ca2cbc48637c",
+          "Name": "",
+          "Description": "行 1 の式の値",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "DesignScript のコードを直接作成することができます。",
+      "Code": "x[1];"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "Id": "de34a4e9ef6c448ab41a75f597cbbfc9",
+      "NodeType": "CodeBlockNode",
+      "Inputs": [
+        {
+          "Id": "7b4eb4552a97436c8b0b8bdc86a072b2",
+          "Name": "x",
+          "Description": "x",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "11c095020a2640509949d5b5898fad41",
+          "Name": "",
+          "Description": "行 1 の式の値",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "DesignScript のコードを直接作成することができます。",
+      "Code": "x[0];"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "Id": "1075a625e6aa4555ac72a96f8991b389",
+      "NodeType": "CodeBlockNode",
+      "Inputs": [
+        {
+          "Id": "8c956750c9d443babfb0b005ae52cdb2",
+          "Name": "x",
+          "Description": "x",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "922e52e07408431ba2f6c64a07c93ba9",
+          "Name": "",
+          "Description": "行 1 の式の値",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "DesignScript のコードを直接作成することができます。",
+      "Code": "x[1];"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# 必要なライブラリをインポート\r\nimport clr\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\n# 現在のドキュメントを取得\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# ファミリ名を格納するリスト\r\nfamily_names = []\r\n\r\n# 全てのファミリシンボルを取得\r\ncollector = FilteredElementCollector(doc).OfClass(Family)\r\n\r\nfor family in collector:\r\n    # ファミリ名をリストに追加\r\n    family_names.append(family.Name)\r\n\r\n# OUTにファミリ名のリストを出力\r\nOUT = family_names\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "565513205c4d491489554d629252c22e",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "6dadb371080b4cafbbb2a3d582c87401",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "b9a0bbf2289649c8b2c1e14f8d66e60d",
+          "Name": "OUT",
+          "Description": "Python スクリプトの結果",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "埋め込み Python スクリプトを実行します。"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# 必要なライブラリをインポート\r\nimport clr\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\n# 現在のドキュメントを取得\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# タイプ名を格納するリスト\r\ntype_names = []\r\n\r\n# 全ての要素タイプを取得\r\ncollector = FilteredElementCollector(doc).WhereElementIsElementType()\r\n\r\nfor element_type in collector:\r\n    # ElementTypeから名前を取得\r\n    type_name = element_type.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM).AsString()\r\n    if type_name:  # 名前が空でない場合\r\n        type_names.append(type_name)\r\n\r\n# OUTにタイプ名のリストを出力\r\nOUT = type_names\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "72a5e503e70a47ae94959acc00403baa",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "8c3285f6d5fe4c33bf7c95bf8a9748b8",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "202d2039bbfb43c888a7e6c0db7e5c99",
+          "Name": "OUT",
+          "Description": "Python スクリプトの結果",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "埋め込み Python スクリプトを実行します。"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# DynamoのINデータを取得\r\ninput_data = IN[0]\r\n\r\n# 前のリストの0番目の値を保持する変数\r\nprevious_family_name = None\r\n\r\n# null (None) を埋める処理\r\nfor sublist in input_data:\r\n    if sublist[0] is None:  # 0番目の値がnullの場合\r\n        sublist[0] = previous_family_name\r\n    else:\r\n        previous_family_name = sublist[0]  # 0番目がnullでない場合、値を保持\r\n\r\n# 処理後のデータをOUTに出力\r\nOUT = input_data\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "479f70ad70e2490ba3ca7586f15b3815",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "5868829068da447ca69ee6d109f852fa",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "15a98adc09a149b8ad80bf97eeb115fc",
+          "Name": "OUT",
+          "Description": "Python スクリプトの結果",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "埋め込み Python スクリプトを実行します。"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "Id": "d84165b4db85485280cec3eb4953d41a",
+      "NodeType": "FunctionNode",
+      "Inputs": [
+        {
+          "Id": "e81bfa42c97f40f69830843c1dc1e9e8",
+          "Name": "list",
+          "Description": "残りの項目を取得するリスト。\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "3627c0f49f424891a3d909fac158bffc",
+          "Name": "rest",
+          "Description": "リストの残りの項目。",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "FunctionSignature": "DSCore.List.RestOfItems@var[]..[]",
+      "Replication": "Auto",
+      "Description": "特定のリストの最初の項目を削除します。\n\nList.RestOfItems (list: var[]..[]): var[]..[]"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# DynamoのINデータを取得\r\ninput_families = IN[0]  # Input1: 取得済みのファミリ名リスト\r\nlist_data = IN[1]  # 数字+List構造のデータ\r\n\r\n# 結果を格納するリスト\r\nincluded_lists = []  # Input1に含まれているファミリ名を持つリスト\r\nexcluded_lists = []  # Input1に含まれていないファミリ名を持つリスト\r\n\r\n# データ構造を走査\r\nfor numbered_list in list_data:\r\n    family_name = numbered_list[0]  # 各リストの0番目の値がファミリ名\r\n    if family_name in input_families:\r\n        included_lists.append(numbered_list)  # 含まれているリストに追加\r\n    else:\r\n        excluded_lists.append(numbered_list)  # 含まれていないリストに追加\r\n\r\n# 結果をOUTに出力\r\nOUT = (included_lists, excluded_lists)\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "ec842c2d7dc84c879a31325df7347861",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "6902a9a323a24798aac298af57c9a083",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "108c2fc6afbf44eab3b8eb8cdbc89174",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "06f9567e7a904dcab23dfe20de94841d",
+          "Name": "OUT",
+          "Description": "Python スクリプトの結果",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "埋め込み Python スクリプトを実行します。"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "Id": "c7ac2826a98749eb85f852ab9a172325",
+      "NodeType": "CodeBlockNode",
+      "Inputs": [
+        {
+          "Id": "a7404f251dbc4905beebfebbc64fa9a3",
+          "Name": "x",
+          "Description": "x",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "ed04b14aefbd428e816986138a6675c5",
+          "Name": "",
+          "Description": "行 1 の式の値",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "DesignScript のコードを直接作成することができます。",
+      "Code": "x[0];"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "Id": "c128362c135f491dbde3f8a80390eb15",
+      "NodeType": "CodeBlockNode",
+      "Inputs": [
+        {
+          "Id": "0dcd105e0fae45ee9d79315b4da1df11",
+          "Name": "x",
+          "Description": "x",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "11e4437911ef413dbffa2440e6f3719a",
+          "Name": "",
+          "Description": "行 1 の式の値",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "DesignScript のコードを直接作成することができます。",
+      "Code": "x[1];"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# DynamoのINデータを取得\r\ninput_type_names = IN[0]  # Input1: 取得済みのタイプ名リスト\r\nlist_data = IN[1]  # 数字+List構造のデータ\r\n\r\n# 結果を格納するリスト\r\nincluded_lists = []  # Input1に含まれているタイプ名を持つリスト\r\nexcluded_lists = []  # Input1に含まれていないタイプ名を持つリスト\r\n\r\n# データ構造を走査\r\nfor numbered_list in list_data:\r\n    type_name = numbered_list[1]  # 各リストの1番目の値がタイプ名\r\n    if type_name in input_type_names:\r\n        included_lists.append(numbered_list)  # 含まれているリストに追加\r\n    else:\r\n        excluded_lists.append(numbered_list)  # 含まれていないリストに追加\r\n\r\n# 結果をOUTに出力\r\nOUT = (included_lists, excluded_lists)\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "c7f44d8b06fd49418b157f55001cb399",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "f72ff4de1e1441e99b9682828ff71783",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "9b9a65dc8ce648d6b886651df470ce2b",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "f4df72c986d54d35920641025b31dbf8",
+          "Name": "OUT",
+          "Description": "Python スクリプトの結果",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "埋め込み Python スクリプトを実行します。"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "Id": "50d9b8ccca144bcd8758542dfa38e66a",
+      "NodeType": "CodeBlockNode",
+      "Inputs": [
+        {
+          "Id": "35e7cdc67af546efa873a22cb9337911",
+          "Name": "x",
+          "Description": "x",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "facdae0d37024814a0fd623ff2a2783e",
+          "Name": "",
+          "Description": "行 1 の式の値",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "DesignScript のコードを直接作成することができます。",
+      "Code": "x[0];"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "Id": "b38b1908d759437b81ab8ef9d602654f",
+      "NodeType": "CodeBlockNode",
+      "Inputs": [
+        {
+          "Id": "79a794985c9d41da9a9594433cb493d9",
+          "Name": "x",
+          "Description": "x",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "6deff2d2f0ba4257b222915a58f24e87",
+          "Name": "",
+          "Description": "行 1 の式の値",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "DesignScript のコードを直接作成することができます。",
+      "Code": "x[1];"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# DynamoのPythonスクリプト\r\n# IN[0]には構造ファイル(Listデータ構造)が入力されることを前提としています\r\n\r\n# 入力データ\r\ndata = IN[0]\r\n\r\n# ファミリ名を格納するリスト\r\nfamily_names = []\r\n\r\n# データ構造を走査し、\"List > 数字 > 0\" の値を取得\r\nfor list_item in data:\r\n    if isinstance(list_item, list) and len(list_item) > 0:\r\n        family_name = list_item[0]  # 各Listの最初の要素を取得\r\n        family_names.append(family_name)\r\n\r\n# 出力\r\nOUT = family_names\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "815f7bec9e0d426f91e6df69c6bd8cec",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "15d28e0474bf45848dcf9e4173804dd4",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "b2d4bdd59c9243718cfba3c7a4c7a909",
+          "Name": "OUT",
+          "Description": "Python スクリプトの結果",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "埋め込み Python スクリプトを実行します。"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# DynamoのPythonスクリプト\r\n# IN[0]には構造ファイル(Listデータ構造)が入力されることを前提としています\r\n\r\n# 入力データ\r\ndata = IN[0]\r\n\r\n# ファミリ名を格納するリスト\r\nfamily_names = []\r\n\r\n# データ構造を走査し、\"List > 数字 > 0\" の値を取得\r\nfor list_item in data:\r\n    if isinstance(list_item, list) and len(list_item) > 0:\r\n        family_name = list_item[1]  # 各Listの最初の要素を取得\r\n        family_names.append(family_name)\r\n\r\n# 出力\r\nOUT = family_names\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "365535ced6d54c65bbb4d6f2f31ee0be",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "404a7730cb0945e99e79ad4aa87ec6d0",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "279613d3a89e421eb3c9d5f9dcd40e82",
+          "Name": "OUT",
+          "Description": "Python スクリプトの結果",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "埋め込み Python スクリプトを実行します。"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# DynamoのPythonスクリプト\r\n# IN[0]には構造ファイル(Listデータ構造)が入力されることを前提としています\r\n\r\n# 入力データ\r\ndata = IN[0]\r\n\r\n# ファミリ名を格納するリスト\r\nfamily_names = []\r\n\r\n# データ構造を走査し、\"List > 数字 > 0\" の値を取得\r\nfor list_item in data:\r\n    if isinstance(list_item, list) and len(list_item) > 0:\r\n        family_name = list_item[0]  # 各Listの最初の要素を取得\r\n        family_names.append(family_name)\r\n\r\n# 出力\r\nOUT = family_names\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "74eac3a0f58547e4848c80f7a863dc2b",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "73e93988d22545198b8cdbffe3e5bc8c",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "48acf81dbf334dfda9273b0929a6e7d7",
+          "Name": "OUT",
+          "Description": "Python スクリプトの結果",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "埋め込み Python スクリプトを実行します。"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# DynamoのPythonスクリプト\r\n# IN[0]には構造ファイル(Listデータ構造)が入力されることを前提としています\r\n\r\n# 入力データ\r\ndata = IN[0]\r\n\r\n# ファミリ名を格納するリスト\r\nfamily_names = []\r\n\r\n# データ構造を走査し、\"List > 数字 > 0\" の値を取得\r\nfor list_item in data:\r\n    if isinstance(list_item, list) and len(list_item) > 0:\r\n        family_name = list_item[1]  # 各Listの最初の要素を取得\r\n        family_names.append(family_name)\r\n\r\n# 出力\r\nOUT = family_names\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "a9cb04c47dfa4f57bbced8f4fc6c175d",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "dfe95b835cdb4829bf6cd6b016739938",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "b2e616fbb9464446a08024dbd4188ed8",
+          "Name": "OUT",
+          "Description": "Python スクリプトの結果",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "埋め込み Python スクリプトを実行します。"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\nclr.AddReference(\"RevitServices\")\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom Autodesk.Revit.DB import FilteredElementCollector, FamilyInstance\r\n\r\n# 現在のドキュメントを取得\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# IN[0] からファミリ名リストを取得\r\nfamily_names = IN[0]  # Dynamo のノードから渡されるファミリ名のリスト\r\n# IN[1] からタイプ名リストを取得\r\ntype_names = IN[1]    # Dynamo のノードから渡されるタイプ名のリスト\r\n\r\n# 出力結果を格納するリスト\r\noutput_results = []\r\n\r\n# ファミリインスタンスを取得\r\ncollector = FilteredElementCollector(doc).OfClass(FamilyInstance)\r\n\r\nfor element in collector:\r\n    # ファミリ名を取得\r\n    family_name = element.Symbol.Family.Name\r\n    # タイプ名を取得\r\n    type_name = element.Name\r\n    \r\n    # ファミリ名とタイプ名がリストに含まれているか確認\r\n    if family_name in family_names and type_name in type_names:\r\n        # パラメータを取得\r\n        type_parameters = {param.Definition.Name: param.AsString() or param.AsValueString() \r\n                           for param in element.Symbol.Parameters}\r\n        instance_parameters = {param.Definition.Name: param.AsString() or param.AsValueString() \r\n                               for param in element.Parameters}\r\n        \r\n        # 結果を格納\r\n        output_results.append({\r\n            \"Family Name\": family_name,\r\n            \"Type Name\": type_name,\r\n            \"Type Parameters\": type_parameters,\r\n            \"Instance Parameters\": instance_parameters\r\n        })\r\n\r\n# Dynamo に結果を出力\r\nOUT = output_results\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "2e99037b045b40a595aeada2c50c349e",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "d2889c796e054b3d893b563cbcbc0765",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "3a92843174df42698161c59b18a95830",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "a033c9a8cdd3473ab3284293d200f727",
+          "Name": "OUT",
+          "Description": "Python スクリプトの結果",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "埋め込み Python スクリプトを実行します。"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\nclr.AddReference(\"RevitServices\")\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom Autodesk.Revit.DB import FilteredElementCollector, FamilyInstance\r\n\r\n# 現在のドキュメントを取得\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# IN[0] からファミリ名リストを取得\r\nfamily_names = IN[0]  # Dynamo のノードから渡されるファミリ名のリスト\r\n# IN[1] からタイプ名リストを取得\r\ntype_names = IN[1]    # Dynamo のノードから渡されるタイプ名のリスト\r\n\r\n# 出力結果を格納する辞書\r\noutput_results = []\r\n\r\n# ファミリインスタンスを取得\r\ncollector = FilteredElementCollector(doc).OfClass(FamilyInstance)\r\n\r\n# 重複を避けるための記録用セット\r\nseen = set()\r\n\r\nfor element in collector:\r\n    # ファミリ名を取得\r\n    family_name = element.Symbol.Family.Name\r\n    # タイプ名を取得\r\n    type_name = element.Name\r\n    \r\n    # ファミリ名とタイプ名がリストに含まれているか確認\r\n    if family_name in family_names and type_name in type_names:\r\n        # パラメータ名（項目名）のリストを取得\r\n        type_parameter_names = sorted({param.Definition.Name for param in element.Symbol.Parameters})\r\n        instance_parameter_names = sorted({param.Definition.Name for param in element.Parameters})\r\n        \r\n        # 重複を避けるためにファミリ名 + タイプ名でチェック\r\n        key = (family_name, type_name)\r\n        if key not in seen:\r\n            seen.add(key)\r\n            # 結果を格納\r\n            output_results.append({\r\n                \"Family Name\": family_name,\r\n                \"Type Name\": type_name,\r\n                \"Type Parameters\": type_parameter_names,\r\n                \"Instance Parameters\": instance_parameter_names\r\n            })\r\n\r\n# Dynamo に結果を出力\r\nOUT = output_results\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "25fa8b4faa7e4e24af8f44bb54ac5285",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "7e14f0956033478ebd63960ae58986cb",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "1d0b549b0f5b4ebebe6d54aff629a2e6",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "213c8b91907c4fb3883628cb314d3485",
+          "Name": "OUT",
+          "Description": "Python スクリプトの結果",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "埋め込み Python スクリプトを実行します。"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# Dynamoで必要なライブラリをインポート\r\nimport clr\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\n# Dynamo入力\r\nfamily_names = IN[0]  # ファミリ名リスト (例: [\"RC\", \"RC\", \"RC\"])\r\ntype_names = IN[1]    # タイプ名リスト (例: [\"1\", \"2\", \"3\"])\r\n\r\n# 現在のRevitドキュメントを取得\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# 出力リスト\r\noutputs = []\r\n\r\n# トランザクションの開始\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\n\r\ntry:\r\n    # 入力リストの長さを確認\r\n    if len(family_names) != len(type_names):\r\n        raise Exception(\"ファミリ名とタイプ名のリストの長さが一致していません。\")\r\n    \r\n    # 各ファミリ名とタイプ名のペアに対して処理を実行\r\n    for family_name, type_name in zip(family_names, type_names):\r\n        # ファミリシンボル（タイプ）のリストを取得\r\n        collector = FilteredElementCollector(doc).OfClass(FamilySymbol)\r\n        family_symbols = [fs for fs in collector if fs.Family.Name == family_name]\r\n        \r\n        if not family_symbols:\r\n            outputs.append(f\"指定されたファミリ '{family_name}' が見つかりません。\")\r\n            continue\r\n        \r\n        # 最初のタイプを基準に複製\r\n        base_type = family_symbols[0]\r\n        new_type = base_type.Duplicate(type_name)\r\n        \r\n        # 成功メッセージをリストに追加\r\n        outputs.append(f\"新しいタイプ '{type_name}' がファミリ '{family_name}' に作成されました。\")\r\n\r\nexcept Exception as e:\r\n    outputs.append(f\"エラー: {str(e)}\")\r\n\r\n# トランザクションの終了\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\n# Dynamoに出力を渡す\r\nOUT = outputs\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "41775a4c035b4797b4f7e83e36f92199",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "cbbcf2c4bd5a4d07a4b78968bdf850fa",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "fc366de00c2a4abdae9f7c3e53681024",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "b73da61514894047a042ad8fa3b8fe0a",
+          "Name": "OUT",
+          "Description": "Python スクリプトの結果",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "埋め込み Python スクリプトを実行します。"
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "dc2c7359bda544f991e36f69506713a7",
+      "End": "02a9c0ba8ce444f5ba502aa8bac47f78",
+      "Id": "182ed0fcce3e4cc1957952035a937eb1",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "dc2c7359bda544f991e36f69506713a7",
+      "End": "7b4eb4552a97436c8b0b8bdc86a072b2",
+      "Id": "3683a36249f94bccbe8c13adf24a181d",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "6b2948de1e244ced9c13cdc048d7522e",
+      "End": "8c956750c9d443babfb0b005ae52cdb2",
+      "Id": "1510b56b65ba4633a94c958ad687154b",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "4b04be2d6ceb4eee8597ca2cbc48637c",
+      "End": "6e2a8f15572b451db01d6be68c216bee",
+      "Id": "9771bfa7ce9d4813b3b1349e2ad501b6",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "11c095020a2640509949d5b5898fad41",
+      "End": "5d4e228fe304472c8e59579ac19f950a",
+      "Id": "7bff4175d47249d68d83f59aa223ef9a",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "922e52e07408431ba2f6c64a07c93ba9",
+      "End": "e81bfa42c97f40f69830843c1dc1e9e8",
+      "Id": "09ae0c3931ce4afda7e42ceeacaf4a6b",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "b9a0bbf2289649c8b2c1e14f8d66e60d",
+      "End": "6902a9a323a24798aac298af57c9a083",
+      "Id": "a4fdfe1375244363b2f84f8996a46a0d",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "202d2039bbfb43c888a7e6c0db7e5c99",
+      "End": "f72ff4de1e1441e99b9682828ff71783",
+      "Id": "60a31acdd022447b821339211410506b",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "15a98adc09a149b8ad80bf97eeb115fc",
+      "End": "108c2fc6afbf44eab3b8eb8cdbc89174",
+      "Id": "681fdff836d34656851dc84b15a4c6cc",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "3627c0f49f424891a3d909fac158bffc",
+      "End": "5868829068da447ca69ee6d109f852fa",
+      "Id": "5913a00a9b14486d9340a1dca6d933b8",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "06f9567e7a904dcab23dfe20de94841d",
+      "End": "a7404f251dbc4905beebfebbc64fa9a3",
+      "Id": "df244f492d2e4560beed852b7ca1a3e5",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "06f9567e7a904dcab23dfe20de94841d",
+      "End": "0dcd105e0fae45ee9d79315b4da1df11",
+      "Id": "39d4938d27ed44fe8a316fc7c8a7b527",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "ed04b14aefbd428e816986138a6675c5",
+      "End": "9b9a65dc8ce648d6b886651df470ce2b",
+      "Id": "446abb83bd42496391edaa16374f778a",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "f4df72c986d54d35920641025b31dbf8",
+      "End": "35e7cdc67af546efa873a22cb9337911",
+      "Id": "c890ba0971a44d64b907d0f11c09c7b5",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "f4df72c986d54d35920641025b31dbf8",
+      "End": "79a794985c9d41da9a9594433cb493d9",
+      "Id": "8e706e4b7e614b3fa4b9a47655d4c322",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "facdae0d37024814a0fd623ff2a2783e",
+      "End": "73e93988d22545198b8cdbffe3e5bc8c",
+      "Id": "c73b6ea9eb234c2a8061ef479a937dda",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "facdae0d37024814a0fd623ff2a2783e",
+      "End": "dfe95b835cdb4829bf6cd6b016739938",
+      "Id": "94c6da3cb7c14e24ace041c378e251f3",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "6deff2d2f0ba4257b222915a58f24e87",
+      "End": "15d28e0474bf45848dcf9e4173804dd4",
+      "Id": "9baee297f57e43668efcc9e29cdff6d1",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "6deff2d2f0ba4257b222915a58f24e87",
+      "End": "404a7730cb0945e99e79ad4aa87ec6d0",
+      "Id": "2bb760726562499899c008dc8155f1c6",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "b2d4bdd59c9243718cfba3c7a4c7a909",
+      "End": "cbbcf2c4bd5a4d07a4b78968bdf850fa",
+      "Id": "64fd04f6da424315b479689d7ce0eb04",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "279613d3a89e421eb3c9d5f9dcd40e82",
+      "End": "fc366de00c2a4abdae9f7c3e53681024",
+      "Id": "e101d40ce3224e0eba1db46bfdbf7c52",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "48acf81dbf334dfda9273b0929a6e7d7",
+      "End": "d2889c796e054b3d893b563cbcbc0765",
+      "Id": "15c4b1ef0ee244ed91a15495eccba82f",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "48acf81dbf334dfda9273b0929a6e7d7",
+      "End": "7e14f0956033478ebd63960ae58986cb",
+      "Id": "7787e57442744551bc343dc08dfb90c5",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "b2e616fbb9464446a08024dbd4188ed8",
+      "End": "3a92843174df42698161c59b18a95830",
+      "Id": "f4063677f0af49a5b0129ee3488307c5",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "b2e616fbb9464446a08024dbd4188ed8",
+      "End": "1d0b549b0f5b4ebebe6d54aff629a2e6",
+      "Id": "a07832c70f9848f68e6c1651c31758b3",
+      "IsHidden": "False"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [
+    {
+      "Name": "構造表サンプル1.xlsx",
+      "ReferenceType": "External",
+      "Nodes": [
+        "de34a4e9ef6c448ab41a75f597cbbfc9"
+      ]
+    }
+  ],
+  "EnableLegacyPolyCurveBehavior": true,
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "プロパティ",
+      "Version": "3.2",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "8.2",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "なし",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "3.2.2.5494",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "背景プレビュー(_B)",
+      "EyeX": -17.0,
+      "EyeY": 24.0,
+      "EyeZ": 50.0,
+      "LookX": 12.0,
+      "LookY": -13.0,
+      "LookZ": -58.0,
+      "UpX": 0.0,
+      "UpY": 1.0,
+      "UpZ": 0.0
+    },
+    "ConnectorPins": [],
+    "NodeViews": [
+      {
+        "Id": "2ea4df456d594d43919744c47c5d84d3",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 86.11979802298413,
+        "Y": 75.03995503640363
+      },
+      {
+        "Id": "a45389336d394284b1235cf6967266fc",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 695.9112094567589,
+        "Y": 187.34320377294486
+      },
+      {
+        "Id": "27b738b0ad7f4ba2acfd88fe070d170b",
+        "Name": "Code Block",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 390.5226367931267,
+        "Y": 237.70645781036393
+      },
+      {
+        "Id": "de34a4e9ef6c448ab41a75f597cbbfc9",
+        "Name": "Code Block",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 391.11084199007894,
+        "Y": 46.76485771835539
+      },
+      {
+        "Id": "1075a625e6aa4555ac72a96f8991b389",
+        "Name": "Code Block",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 917.1761794347069,
+        "Y": 94.4228515763908
+      },
+      {
+        "Id": "565513205c4d491489554d629252c22e",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 1268.7137653480268,
+        "Y": 316.42615896162243
+      },
+      {
+        "Id": "72a5e503e70a47ae94959acc00403baa",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 2049.7188657049546,
+        "Y": -607.7440454085526
+      },
+      {
+        "Id": "479f70ad70e2490ba3ca7586f15b3815",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 1451.39756694019,
+        "Y": -210.08532431663372
+      },
+      {
+        "Id": "d84165b4db85485280cec3eb4953d41a",
+        "Name": "List.RestOfItems",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 1094.0417118456141,
+        "Y": -295.96646999703887
+      },
+      {
+        "Id": "ec842c2d7dc84c879a31325df7347861",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 1559.11887861771,
+        "Y": 77.76698741964776
+      },
+      {
+        "Id": "c7ac2826a98749eb85f852ab9a172325",
+        "Name": "Code Block",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 2059.4205728882725,
+        "Y": -416.34639202868647
+      },
+      {
+        "Id": "c128362c135f491dbde3f8a80390eb15",
+        "Name": "Code Block",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 1914.2816051307786,
+        "Y": 603.4691892222736
+      },
+      {
+        "Id": "c7f44d8b06fd49418b157f55001cb399",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 2387.451796261694,
+        "Y": -418.4792325867365
+      },
+      {
+        "Id": "50d9b8ccca144bcd8758542dfa38e66a",
+        "Name": "Code Block",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 2604.188942329177,
+        "Y": -1096.8815490383863
+      },
+      {
+        "Id": "b38b1908d759437b81ab8ef9d602654f",
+        "Name": "Code Block",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 2799.515467224461,
+        "Y": -163.48534761422906
+      },
+      {
+        "Id": "815f7bec9e0d426f91e6df69c6bd8cec",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 3402.797088875944,
+        "Y": -189.69001047228116
+      },
+      {
+        "Id": "365535ced6d54c65bbb4d6f2f31ee0be",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 3405.5139071577373,
+        "Y": 117.11738193892444
+      },
+      {
+        "Id": "74eac3a0f58547e4848c80f7a863dc2b",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 2991.8262942940187,
+        "Y": -1067.9047555234042
+      },
+      {
+        "Id": "a9cb04c47dfa4f57bbced8f4fc6c175d",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 2998.331544552545,
+        "Y": -832.6418294360845
+      },
+      {
+        "Id": "2e99037b045b40a595aeada2c50c349e",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 3468.509026980215,
+        "Y": -1454.7290890679542
+      },
+      {
+        "Id": "25fa8b4faa7e4e24af8f44bb54ac5285",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 3448.927018195734,
+        "Y": -884.4123769186285
+      },
+      {
+        "Id": "41775a4c035b4797b4f7e83e36f92199",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 3901.067308598351,
+        "Y": -140.94683374351416
+      }
+    ],
+    "Annotations": [
+      {
+        "Id": "02eaa28f80984720ba9fa202741353ad",
+        "Title": "ファミリ作成が必要",
+        "DescriptionText": "説明<グループの説明を編集するにはここをダブル クリック>",
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [
+          "c128362c135f491dbde3f8a80390eb15"
+        ],
+        "HasNestedGroups": false,
+        "Left": 1904.2816051307786,
+        "Top": 478.2691892222736,
+        "Width": 288.13666666666666,
+        "Height": 256.99999999999994,
+        "FontSize": 36.0,
+        "GroupStyleId": "00000000-0000-0000-0000-000000000000",
+        "InitialTop": 603.4691892222736,
+        "InitialHeight": 145.0,
+        "TextblockHeight": 115.2,
+        "Background": "#FFC1D676"
+      },
+      {
+        "Id": "a919ea2b037a41469664b673f2415f88",
+        "Title": "タイプ名未作成",
+        "DescriptionText": "説明<グループの説明を編集するにはここをダブル クリック>",
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [
+          "815f7bec9e0d426f91e6df69c6bd8cec",
+          "365535ced6d54c65bbb4d6f2f31ee0be"
+        ],
+        "HasNestedGroups": false,
+        "Left": 3392.797088875944,
+        "Top": -271.6900104722812,
+        "Width": 244.00000000000003,
+        "Height": 522.2073924112057,
+        "FontSize": 36.0,
+        "GroupStyleId": "00000000-0000-0000-0000-000000000000",
+        "InitialTop": -189.69001047228116,
+        "InitialHeight": 391.9065499032718,
+        "TextblockHeight": 72.0,
+        "Background": "#FFC1D676"
+      },
+      {
+        "Id": "fa4369794fde4352bd863d0f545f4130",
+        "Title": "ファミリ・タイプあり",
+        "DescriptionText": "説明<グループの説明を編集するにはここをダブル クリック>",
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [
+          "74eac3a0f58547e4848c80f7a863dc2b",
+          "a9cb04c47dfa4f57bbced8f4fc6c175d"
+        ],
+        "HasNestedGroups": false,
+        "Left": 2981.8262942940187,
+        "Top": -1149.9047555234042,
+        "Width": 266.08000000000004,
+        "Height": 450.66292608731965,
+        "FontSize": 36.0,
+        "GroupStyleId": "00000000-0000-0000-0000-000000000000",
+        "InitialTop": -1067.9047555234042,
+        "InitialHeight": 380.26292608731967,
+        "TextblockHeight": 72.0,
+        "Background": "#FFC1D676"
+      },
+      {
+        "Id": "7123b2d3c62e403e810c7093a76b1567",
+        "Title": "Revit 内のタイプパラとインスタンスパラ(Excelデータより絞りこみ済)",
+        "DescriptionText": "説明<グループの説明を編集するにはここをダブル クリック>",
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [
+          "2e99037b045b40a595aeada2c50c349e"
+        ],
+        "HasNestedGroups": false,
+        "Left": 3458.509026980215,
+        "Top": -1570.329089067954,
+        "Width": 838.6233333333333,
+        "Height": 279.39999999999986,
+        "FontSize": 36.0,
+        "GroupStyleId": "00000000-0000-0000-0000-000000000000",
+        "InitialTop": -1454.7290890679542,
+        "InitialHeight": 145.0,
+        "TextblockHeight": 105.6,
+        "Background": "#FFD4B6DB"
+      }
+    ],
+    "X": -763.1241748796416,
+    "Y": 603.2290039575514,
+    "Zoom": 0.379033521561797
+  }
+}
