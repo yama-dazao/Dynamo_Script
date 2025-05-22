@@ -58,15 +58,37 @@ class ViewSelectForm(Form):
 form = ViewSelectForm()
 result = form.ShowDialog()
 
+def get_visible_columns_in_view(view):
+    collector = FilteredElementCollector(doc, view.Id) \
+        .OfCategory(BuiltInCategory.OST_StructuralColumns) \
+        .WhereElementIsNotElementType()
+
+    visible_columns = []
+
+    # ビューのCropBox（表示範囲）で交差判定を行う
+    if view.CropBoxActive and view.CropBoxVisible:
+        crop_box = view.CropBox
+        view_box = Outline(crop_box.Min, crop_box.Max)
+
+        for element in collector:
+            if element.IsHidden(view):
+                continue
+            bbox = element.get_BoundingBox(view)
+            if bbox and view_box.Intersects(Outline(bbox.Min, bbox.Max), 0.0001):
+                visible_columns.append(element)
+    else:
+        # CropBoxが無効なら、IsHiddenだけで判定（やや粗いがfallbackとして有効）
+        for element in collector:
+            if not element.IsHidden(view):
+                visible_columns.append(element)
+
+    return visible_columns
+
 if result == DialogResult.OK:
     selected_view_name = form.cb_views.SelectedItem
     selected_view = next((v for v in valid_views if v.Name == selected_view_name), None)
     if selected_view:
-        # 選ばれたビューに見える構造柱を取得
-        columns = FilteredElementCollector(doc, selected_view.Id) \
-            .OfCategory(BuiltInCategory.OST_StructuralColumns) \
-            .WhereElementIsNotElementType() \
-            .ToElements()
+        columns = get_visible_columns_in_view(selected_view)
         OUT = columns
     else:
         OUT = "ビューが見つかりません"
